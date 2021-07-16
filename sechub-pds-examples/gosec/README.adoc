@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: MIT
 
+:toc:
+
 = GoSec + PDS
 
 https://securego.io/[GoSec] is a free and open source static application security testing tool. GoSec is a command line interface (CLI) tool. By combining GoSec with the SecHub https://daimler.github.io/sechub/latest/sechub-product-delegation-server.html[Product Delegation Server (PDS)] in a container, GoSec can be used with SecHub. Another scenario is to use PDS + GoSec standalone.
@@ -27,25 +29,39 @@ Docker and Docker-Compose need to be installed:
 The folder contains a start script which does the <<_manually, manual>> steps for you:
 
 ----
-./01-start-local.sh
+./01-start-docker-compose.sh
 ----
 
 ==== Manually
 
-. Copy `env` file to `.env`
+. Copy `env-example` file to `.env`
 
-. Set values in `.env` file. The values are described in the `env` file.
+. Set values in `.env` file. The values are described in the `env-example` file.
 
 . Start container the Ubuntu container using https://docs.docker.com/compose/[Docker Compose]:
 +
 ----
-docker-compose --file pds_gosec_ubuntu.yaml up --build
+docker-compose --file docker-compose_pds_gosec_ubuntu.yaml up --build
 ----
 +
 or to start the Alpine Linux container:
 +
 ----
-docker-compose --file pds_gosec_alpine.yaml up --build
+docker-compose --file docker-compose_pds_gosec_alpine.yaml up --build
+----
+
+==== Clustered
+
+Starting several PDS + GoSec instances
+
+----
+./50-start-multiple-docker-compose.sh <replicas>
+----
+
+Example of starting 3 PDS + GoSec instances
+
+----
+./50-start-multiple-docker-compose.sh 3
 ----
 
 === Scan
@@ -62,9 +78,12 @@ The folder contains a `pds-api.sh` script.
 +
 ----
 export PDS_SERVER=https://localhost:8444
-export PDS_USERID=pds-dev-admin
-export PDS_APITOKEN=pds-dev-apitoken
+export PDS_USERID=admin
+export PDS_APITOKEN="pds-apitoken"
 ----
++
+[TIP]
+`docker ps` -> get ports
 
 . Check if server is alive and running
 +
@@ -334,21 +353,40 @@ Output
 +
 NOTE: This is an example output. The output can be very different depending on the files you scanned. The output depends on the uploaded `ZIP` file.
 
-==== Troubleshooting
+=== Troubleshooting
 
-Access the Ubuntu container:
-
-----
-docker exec -it pds_gosec_ubuntu bash
-----
-
-or for Alpine Linux:
+==== Access the Ubuntu container
 
 ----
-docker exec -it pds_gosec_alpine sh
+docker exec -it pds-gosec-ubuntu bash
 ----
 
-== Build Image & Push to Registry
+==== Access the Alpine Linux container
+
+----
+docker exec -it pds-gosec-alpine sh
+----
+
+==== Java Application Remote Debugging of PDS
+
+. Set `JAVA_ENABLE_DEBUG=true` in the `.env` file
+
+. Connect via remote debugging to the `pds`
++
+connect via CLI
+(see: )
++
+----
+jdb -attach localhost:15024
+----
++
+TIP: https://www.baeldung.com/java-application-remote-debugging[Java Application Remote Debugging] and https://www.tutorialspoint.com/jdb/jdb_basic_commands.htm[JDB - Basic Commands]
++
+or connect via IDE (e. g. Eclipse IDE, VSCodium, Eclipse Theia, IntelliJ etc.).
++
+TIP: https://www.eclipse.org/community/eclipse_newsletter/2017/june/article1.php[Debugging the Eclipse IDE for Java Developers]
+
+== Build Image and Push to Registry
 
 === Build Image
 

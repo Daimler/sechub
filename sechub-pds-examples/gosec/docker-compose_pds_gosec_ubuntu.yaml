@@ -1,0 +1,20 @@
+# SPDX-License-Identifier: MIT
+
+version: "3"
+services:
+    pds-gosec-ubuntu:
+        build:
+            args:
+                - BASE_IMAGE=ubuntu:focal
+            context: docker/
+            dockerfile: Dockerfile-Ubuntu
+        container_name: pds-gosec-ubuntu
+        env_file:
+            - .env
+        ports:
+            - "127.0.0.1:8444:8444"
+            - "127.0.0.1:15024:15024"
+        networks:
+            - "internal"
+networks:
+    internal:

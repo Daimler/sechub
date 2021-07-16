@@ -1,0 +1,48 @@
+# SPDX-License-Identifier: MIT
+
+version: "3"
+services:
+    pds-gosec:
+        build:
+            args:
+                - BASE_IMAGE=ubuntu:focal
+            context: docker/
+            dockerfile: Dockerfile-Ubuntu
+        environment:
+            - POSTGRESQL_CONNECTION=jdbc:postgresql://database:5432/gosec
+        env_file:
+            - .env
+        networks:
+            - "internal"
+        volumes:
+            - "shared_volume:/shared_volumes/uploads"
+        depends_on: 
+            - database
+
+    loadbalancer:
+        build:
+            context: docker/loadbalancer
+        env_file:
+            - .env
+        networks:
+            - "internal"
+        depends_on:
+            - pds-gosec
+        ports:
+            - "127.0.0.1:8444:8444"
+    
+    database:
+        build:
+            context: docker/database
+        env_file:
+            - .env
+        networks:
+            - "internal"
+        ports:
+            - "127.0.0.1:5432:5432"
+        
+networks:
+    internal:
+
+volumes:
+    shared_volume:

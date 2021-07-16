@@ -1,0 +1,38 @@
+# The PDS start mode
+#   debug - starts only the container
+#   localserver - starts the server locally
+PDS_START_MODE=debug, localserver
+
+# Enable Java Remote Debugging
+JAVA_ENABLE_DEBUG=true, false
+
+# Admin name and token
+# The `{noop}` means no secure hashing
+ADMIN_USERID=admin
+ADMIN_APITOKEN={noop}pds-apitoken
+
+# Techuser name and token
+# The `{noop}` means no secure hashing
+TECHUSER_USERID=techuser
+TECHUSER_APITOKEN={noop}pds-apitoken
+
+# The loadbalancer start mode
+#   debug - starts only the container
+#   server - starts the loadbalancer
+LOADBALANCER_START_MODE=debug, server
+
+# The database start mode
+#   debug - starts only the container
+#   server - starts the database
+LOADBALANCER_START_MODE=debug, server
+
+# Keeps the container alive after the server crashed.
+# This is helpful for investigating the reason
+# for the crash.
+KEEP_CONTAINER_ALIVE_AFTER_PDS_CRASHED=true, false
+
+# PostgreSQL connection string
+# if the value is set the server will start with the postgres profile
+# meaning the PDS server will connect to the database
+POSTGRESQL_CONNECTION=
+POSTGRESQL_CONNECTION=jdbc:postgresql://127.0.0.1:5432/pds

@@ -5,7 +5,7 @@
     "products" : [
         {
             "id" : "PDS_GOSEC",
-            "path" : "/tool/gosec.sh",
+            "path" : "/scripts/gosec.sh",
             "scanType" : "codeScan",
             "description" : "Runs gosec"
         }
