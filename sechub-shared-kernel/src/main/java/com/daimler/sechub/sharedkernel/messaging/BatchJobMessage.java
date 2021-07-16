@@ -37,7 +37,7 @@ public class BatchJobMessage implements JSONable<BatchJobMessage> {
         return batchJobId;
     }
 
-    public void setSechubJobUUID(UUID jobUUID) {
+    public void setSecHubJobUUID(UUID jobUUID) {
         this.sechubJobUUID = jobUUID;
     }
 

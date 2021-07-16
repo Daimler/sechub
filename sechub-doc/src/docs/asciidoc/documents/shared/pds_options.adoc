@@ -1,4 +1,51 @@
 // SPDX-License-Identifier: MIT
+[[section-start-configuration]]
+==== Minimum start configuration
+
+===== PROD profile
+You can start a PDS in production profile which requires a running PostgreSQL
+database. Please refer also to <<section-postgresql-configuration,PostgreSQL configuration>> for
+database setup which must be done before. 
+
+Example: 
+----
+java -jar Dspring.profiles.active=pds_prod sechub-pds-0.25.0.jar
+----
+
+NOTE: There are some more mandatory parameters, please refer to <<section-general-configuration,general configuration>> 
+
+===== Integration test mode
+You can start a PDS in integration test mode if you just want to
+test
+
+
+Example: 
+----
+java -jar -Dspring.profiles.active=pds_integrationtest,pds_h2 sechub-pds-0.25.0.jar
+----
+
+[[section-db-configuration]]
+==== Database configuration 
+
+[[section-postgresql-configuration]]
+===== PostgreSQL
+
+First of all install a PostgreSQL database.
+
+Then define following environment entries before you start the server
+with active postgres profile:
+
+- POSTGRES_DB_URL
+- POSTGRES_DB_USERNAME
+- POSTGRES_DB_PASSWORD
+
+Examples:
+----
+POSTGRES_DB_URL=jdbc:postgresql://127.0.0.1:49153/pds-gosec
+POSTGRES_DB_USERNAME=pds-gosec-pg-admin
+POSTGRES_DB_PASSWORD=a-very-strong-password...
+----
+
 [[section-general-configuration]]
 ==== General configuration
 {pds} can be configured  by keys on server startup.

@@ -4,7 +4,6 @@ package com.daimler.sechub.domain.schedule.batch;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-import org.jboss.logging.MDC;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.batch.core.JobParameters;
@@ -17,13 +16,9 @@ import com.daimler.sechub.domain.schedule.ExecutionResult;
 import com.daimler.sechub.domain.schedule.SchedulingConstants;
 import com.daimler.sechub.domain.schedule.batch.BatchConfiguration.BatchJobExecutionScope;
 import com.daimler.sechub.domain.schedule.job.ScheduleSecHubJob;
-import com.daimler.sechub.sharedkernel.LogConstants;
 import com.daimler.sechub.sharedkernel.Step;
-import com.daimler.sechub.sharedkernel.messaging.BatchJobMessage;
 import com.daimler.sechub.sharedkernel.messaging.DomainMessage;
-import com.daimler.sechub.sharedkernel.messaging.DomainMessageSynchronousResult;
 import com.daimler.sechub.sharedkernel.messaging.IsSendingAsyncMessage;
-import com.daimler.sechub.sharedkernel.messaging.IsSendingSyncMessage;
 import com.daimler.sechub.sharedkernel.messaging.JobMessage;
 import com.daimler.sechub.sharedkernel.messaging.MessageDataKey;
 import com.daimler.sechub.sharedkernel.messaging.MessageDataKeys;
@@ -32,136 +27,74 @@ import com.daimler.sechub.sharedkernel.usecases.job.UseCaseSchedulerStartsJob;
 
 class ScanExecutionTasklet implements Tasklet {
 
-	private final BatchJobExecutionScope scope;
+    private final BatchJobExecutionScope scope;
 
-    private Long batchJobId;
+    private static final Logger LOG = LoggerFactory.getLogger(ScanExecutionTasklet.class);
 
-	private static final Logger LOG = LoggerFactory.getLogger(ScanExecutionTasklet.class);
-
-	ScanExecutionTasklet(BatchJobExecutionScope batchExecutionScope) {
-		this.scope = batchExecutionScope;
-	}
-
-	@Override
-	@UseCaseSchedulerStartsJob(@Step(number = 3, next = 5, name = "Batch Job", description = "usecases/job/scheduler_starts_job_tasklet.adoc"))
-	public RepeatStatus execute(StepContribution contribution, ChunkContext chunkContext) throws Exception {
-	    this.batchJobId=contribution.getStepExecution().getJobExecution().getJobId();
-		executeSafe();
-		return RepeatStatus.FINISHED;
-	}
-
-	@IsSendingSyncMessage(MessageID.START_SCAN)
-	private void executeSafe() {
-	    
-		JobParameters jobParameters = this.scope.getJobExecution().getJobParameters();
-		LOG.debug("executing with parameters:{}", jobParameters);
-
-		String secHubJobUUIDAsString = jobParameters.getString(SchedulingConstants.BATCHPARAM_SECHUB_UUID);
-
-		UUID secHubJobUUID = UUID.fromString(secHubJobUUIDAsString);
-		try {
-			ScheduleSecHubJob sechubJob = scope.getSecHubJobRepository().getOne(secHubJobUUID);
-			String secHubConfiguration = sechubJob.getJsonConfiguration();
-			
-			/* own thread so MDC.put necessary */
-			MDC.clear();
-			MDC.put(LogConstants.MDC_SECHUB_JOB_UUID, secHubJobUUIDAsString);
-			MDC.put(LogConstants.MDC_SECHUB_PROJECT_ID,sechubJob.getProjectId());
-			
-			LOG.info("Executing sechub job: {}", secHubJobUUIDAsString);
-
-			/* we send no a synchronous SCAN event */
-			DomainMessage request = new DomainMessage(MessageID.START_SCAN);
-			request.set(MessageDataKeys.EXECUTED_BY, sechubJob.getOwner());
-			request.set(MessageDataKeys.SECHUB_UUID, secHubJobUUID);
-			request.set(MessageDataKeys.SECHUB_CONFIG, MessageDataKeys.SECHUB_CONFIG.getProvider().get(secHubConfiguration));
-			
-			BatchJobMessage batchJobIdMessage = new BatchJobMessage();
-			batchJobIdMessage.setBatchJobId(batchJobId);
-			batchJobIdMessage.setSechubJobUUID(secHubJobUUID);
-            request.set(MessageDataKeys.BATCH_JOB_ID , batchJobIdMessage);
-
-			/* wait for scan event result - synchron */
-			DomainMessageSynchronousResult response = scope.getEventBusService().sendSynchron(request);
-
-			updateSecHubJob(secHubJobUUID, response);
-
-			sendJobDoneMessageWhenNotAbandonded(secHubJobUUID, response);
-
-		} catch (Exception e) {
-			LOG.error("Error happend at spring batch task execution:" + e.getMessage(), e);
-
-			markSechHubJobFailed(secHubJobUUID);
-			sendJobFailed(secHubJobUUID);
-
-		}finally {
-		    /* cleanup MDC */
-		    MDC.clear();
-		}
-	}
-
-    private void sendJobDoneMessageWhenNotAbandonded(UUID secHubJobUUID, DomainMessageSynchronousResult response) {
-        if (MessageID.SCAN_ABANDONDED.equals(response.getMessageId())) {
-            LOG.info("Will not send sechub job done message, because scan was abandoned");
-            return;
-        }
-        LOG.debug("Will send job done message for: {}", secHubJobUUID);
-        sendJobDone(secHubJobUUID);
+    ScanExecutionTasklet(BatchJobExecutionScope batchExecutionScope) {
+        this.scope = batchExecutionScope;
     }
 
-	private void markSechHubJobFailed(UUID secHubJobUUID) {
-		updateSecHubJob(secHubJobUUID, ExecutionResult.FAILED, null);
+    @Override
+    @UseCaseSchedulerStartsJob(@Step(number = 3, next = 5, name = "Batch Job", description = "usecases/job/scheduler_starts_job_tasklet.adoc"))
+    public RepeatStatus execute(StepContribution contribution, ChunkContext chunkContext) throws Exception {
+        Long batchJobId = contribution.getStepExecution().getJobExecution().getJobId();
 
-		LOG.info("marked sechub as failed:{}",secHubJobUUID);
-	}
+        JobParameters jobParameters = this.scope.getJobExecution().getJobParameters();
+        LOG.debug("executing with parameters:{}", jobParameters);
 
-	private void updateSecHubJob(UUID secHubUUID, DomainMessageSynchronousResult response) {
-		ExecutionResult result;
-		if (MessageID.SCAN_ABANDONDED.equals(response.getMessageId())) {
-		    /* Abandon happens normally only, when doing a restart or an hard internal cancel.
-		     * In both situations the sechub job execution result inside scheduler is already set before,
-		     * and state will also be changed to CANCELED, or on restart to RUNNING 
-		     */
-		    LOG.info("Ignore sechub job update, because scan was abandoned");
-		    return;
-		}
-		if (response.hasFailed()) {
-			result = ExecutionResult.FAILED;
-		} else {
-			result = ExecutionResult.OK;
-		}
-		String trafficLightString = response.get(MessageDataKeys.REPORT_TRAFFIC_LIGHT);
-		updateSecHubJob(secHubUUID, result, trafficLightString);
-	}
+        String secHubJobUUIDAsString = jobParameters.getString(SchedulingConstants.BATCHPARAM_SECHUB_UUID);
 
-	private void updateSecHubJob(UUID secHubUUID, ExecutionResult result, String trafficLightString) {
-		scope.getSecHubJobUpdater().safeUpdateOfSecHubJob(secHubUUID, result, trafficLightString);
-	}
+        UUID secHubJobUUID = UUID.fromString(secHubJobUUIDAsString);
+        ScheduleSecHubJob sechubJob=null;
+        
+        try {
+            sechubJob = scope.getSecHubJobRepository().getById(secHubJobUUID);
+            
+            /* execute sechub job synchron */
+            SynchronSecHubJobExecutor trigger = new SynchronSecHubJobExecutor(scope.getEventBusService(),scope.getSecHubJobUpdater());
+            trigger.execute(sechubJob, batchJobId);
+            
+        } catch (Exception e) {
+            LOG.error("Error happend at spring batch task execution:" + e.getMessage(), e);
 
-	@IsSendingAsyncMessage(MessageID.JOB_DONE)
-	private void sendJobDone(UUID jobUUID) {
-		sendJobInfo(MessageDataKeys.JOB_DONE_DATA, jobUUID, MessageID.JOB_DONE);
-	}
+            markSechHubJobFailed(secHubJobUUID);
+            sendJobFailed(secHubJobUUID);
+            
+        }
+        return RepeatStatus.FINISHED;
+    }
+    
+    
+    private void markSechHubJobFailed(UUID secHubJobUUID) {
+        updateSecHubJob(secHubJobUUID, ExecutionResult.FAILED, null);
 
-	@IsSendingAsyncMessage(MessageID.JOB_FAILED)
-	private void sendJobFailed(UUID jobUUID) {
-		sendJobInfo(MessageDataKeys.JOB_FAILED_DATA, jobUUID, MessageID.JOB_FAILED);
-	}
+        LOG.info("marked sechub as failed:{}", secHubJobUUID);
+    }
 
-	private void sendJobInfo(MessageDataKey<JobMessage> key, UUID jobUUID, MessageID id) {
-		DomainMessage request = new DomainMessage(id);
-		JobMessage message = createMessage(jobUUID);
+    private void updateSecHubJob(UUID secHubUUID, ExecutionResult result, String trafficLightString) {
+        scope.getSecHubJobUpdater().safeUpdateOfSecHubJob(secHubUUID, result, trafficLightString);
+    }
 
-		request.set(key, message);
+    @IsSendingAsyncMessage(MessageID.JOB_FAILED)
+    private void sendJobFailed(UUID jobUUID) {
+        sendJobInfo(MessageDataKeys.JOB_FAILED_DATA, jobUUID, MessageID.JOB_FAILED);
+    }
 
-		scope.getEventBusService().sendAsynchron(request);
-	}
+    private void sendJobInfo(MessageDataKey<JobMessage> key, UUID jobUUID, MessageID id) {
+        DomainMessage request = new DomainMessage(id);
+        JobMessage message = createMessage(jobUUID);
 
-	private JobMessage createMessage(UUID jobUUID) {
-		JobMessage message = new JobMessage();
-		message.setJobUUID(jobUUID);
-		message.setSince(LocalDateTime.now());
-		return message;
-	}
+        request.set(key, message);
+
+        scope.getEventBusService().sendAsynchron(request);
+    }
+
+    private JobMessage createMessage(UUID jobUUID) {
+        JobMessage message = new JobMessage();
+        message.setJobUUID(jobUUID);
+        message.setSince(LocalDateTime.now());
+        return message;
+    }
 
 }

@@ -35,6 +35,9 @@ public class CreateScanReportService {
 
 	@Autowired
 	ScanReportRepository reportRepository;
+	
+	@Autowired
+	ScanReportTransactionService scanReportTransactionService;
 
 	/**
 	 * Creates a report based on product results. There is no security check because its only called internally from system.
@@ -53,7 +56,7 @@ public class CreateScanReportService {
 		LOG.info("Creating report for {}, will delete former reports if existing", traceLogID(sechubJobUUID));
 		
 		/* we allow only one report for one job */
-		reportRepository.deleteAllReportsForSecHubJobUUID(sechubJobUUID);
+		scanReportTransactionService.deleteAllReportsForSecHubJobUUIDinOwnTransaction(sechubJobUUID);
 		
 		/* create report - project id in configuration was set on job creation time and is always correct/valid and
 		 * will differ between api parameter and config..!*/

@@ -111,7 +111,7 @@ public class JobUsecasesEventTraceScenario4IntTest {
                  to("com.daimler.sechub.domain.administration.job.JobAdministrationMessageHandler").
            /* 5 */
            syncEvent(MessageID.START_SCAN).
-                 from("com.daimler.sechub.domain.schedule.batch.ScanExecutionTasklet").
+                 from("com.daimler.sechub.domain.schedule.batch.SynchronSecHubJobExecutor$1").
                  to("com.daimler.sechub.domain.scan.ScanService").
            /* 6 */
            syncEvent(MessageID.REQUEST_BATCH_JOB_STATUS).
@@ -119,7 +119,7 @@ public class JobUsecasesEventTraceScenario4IntTest {
                  to("com.daimler.sechub.domain.schedule.batch.SchedulerBatchJobStatusRequestHandler").
            /* 7 */
            asyncEvent(MessageID.JOB_DONE).
-                 from("com.daimler.sechub.domain.schedule.batch.ScanExecutionTasklet").
+                 from("com.daimler.sechub.domain.schedule.batch.SynchronSecHubJobExecutor").
                  to("com.daimler.sechub.domain.administration.job.JobAdministrationMessageHandler").
         /* assert + write */
         assertAsExpectedAndCreateHistoryFile(UseCaseIdentifier.UC_ADMIN_RESTARTS_JOB_HARD.name(),"crashed_jvm_with_product_result");
@@ -168,7 +168,7 @@ public class JobUsecasesEventTraceScenario4IntTest {
                  to("com.daimler.sechub.domain.administration.job.JobAdministrationMessageHandler").
            /* 4 */
            syncEvent(MessageID.START_SCAN).
-                 from("com.daimler.sechub.domain.schedule.batch.ScanExecutionTasklet").
+                 from("com.daimler.sechub.domain.schedule.batch.SynchronSecHubJobExecutor$1").
                  to("com.daimler.sechub.domain.scan.ScanService").
            /* 5 */
            syncEvent(MessageID.REQUEST_BATCH_JOB_STATUS).
@@ -176,7 +176,7 @@ public class JobUsecasesEventTraceScenario4IntTest {
                  to("com.daimler.sechub.domain.schedule.batch.SchedulerBatchJobStatusRequestHandler").
            /* 6 */
            asyncEvent(MessageID.JOB_DONE).
-                 from("com.daimler.sechub.domain.schedule.batch.ScanExecutionTasklet").
+                 from("com.daimler.sechub.domain.schedule.batch.SynchronSecHubJobExecutor").
                  to("com.daimler.sechub.domain.administration.job.JobAdministrationMessageHandler").
         /* assert + write */
         assertAsExpectedAndCreateHistoryFile(UseCaseIdentifier.UC_ADMIN_RESTARTS_JOB_HARD.name(),"crashed_jvm_with_product_result");
@@ -260,7 +260,7 @@ public class JobUsecasesEventTraceScenario4IntTest {
                  to("com.daimler.sechub.domain.administration.job.JobAdministrationMessageHandler").
            /* 3 */
            syncEvent(MessageID.START_SCAN).
-                 from("com.daimler.sechub.domain.schedule.batch.ScanExecutionTasklet").
+                 from("com.daimler.sechub.domain.schedule.batch.SynchronSecHubJobExecutor$1").
                  to("com.daimler.sechub.domain.scan.ScanService").
            /* 4 */
            syncEvent(MessageID.REQUEST_BATCH_JOB_STATUS).
@@ -268,7 +268,7 @@ public class JobUsecasesEventTraceScenario4IntTest {
                  to("com.daimler.sechub.domain.schedule.batch.SchedulerBatchJobStatusRequestHandler").
            /* 5 */
            asyncEvent(MessageID.JOB_DONE).
-                 from("com.daimler.sechub.domain.schedule.batch.ScanExecutionTasklet").
+                 from("com.daimler.sechub.domain.schedule.batch.SynchronSecHubJobExecutor").
                  to("com.daimler.sechub.domain.administration.job.JobAdministrationMessageHandler").
         /* assert + write */
         assertAsExpectedAndCreateHistoryFile(UseCaseIdentifier.UC_ADMIN_RESTARTS_JOB.name(),"crashed_jvm_with_product_result");
@@ -314,7 +314,7 @@ public class JobUsecasesEventTraceScenario4IntTest {
                  to("com.daimler.sechub.domain.administration.job.JobAdministrationMessageHandler").
            /* 3 */
            syncEvent(MessageID.START_SCAN).
-                 from("com.daimler.sechub.domain.schedule.batch.ScanExecutionTasklet").
+                 from("com.daimler.sechub.domain.schedule.batch.SynchronSecHubJobExecutor$1").
                  to("com.daimler.sechub.domain.scan.ScanService").
            /* 4 */
            syncEvent(MessageID.REQUEST_BATCH_JOB_STATUS).
@@ -322,7 +322,7 @@ public class JobUsecasesEventTraceScenario4IntTest {
                  to("com.daimler.sechub.domain.schedule.batch.SchedulerBatchJobStatusRequestHandler").
            /* 5 */
            asyncEvent(MessageID.JOB_DONE).
-                 from("com.daimler.sechub.domain.schedule.batch.ScanExecutionTasklet").
+                 from("com.daimler.sechub.domain.schedule.batch.SynchronSecHubJobExecutor").
                  to("com.daimler.sechub.domain.administration.job.JobAdministrationMessageHandler").
         /* assert + write */
         assertAsExpectedAndCreateHistoryFile(UseCaseIdentifier.UC_ADMIN_RESTARTS_JOB.name(),"crashed_jvm_with_product_result");

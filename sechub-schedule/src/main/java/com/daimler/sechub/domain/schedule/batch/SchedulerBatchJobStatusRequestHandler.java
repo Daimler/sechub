@@ -48,7 +48,7 @@ public class SchedulerBatchJobStatusRequestHandler implements SynchronMessageHan
 
         BatchJobMessage status = new BatchJobMessage();
         status.setBatchJobId(batchJobId);
-        status.setSechubJobUUID(sechubBatchJobUUID);
+        status.setSecHubJobUUID(sechubBatchJobUUID);
 
         /* find */
         JobExecution jobExecution = explorer.getJobExecution(batchJobId);

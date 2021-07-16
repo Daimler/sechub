@@ -300,7 +300,7 @@ public class ScanServiceTest {
 		request.set(MessageDataKeys.SECHUB_UUID, UUID);
 		request.set(MessageDataKeys.SECHUB_CONFIG, configMin);
 		BatchJobMessage batchJobMessage = new BatchJobMessage();
-		batchJobMessage.setSechubJobUUID(UUID);
+		batchJobMessage.setSecHubJobUUID(UUID);
 		batchJobMessage.setBatchJobId(42);
         request.set(MessageDataKeys.BATCH_JOB_ID, batchJobMessage);
 

@@ -1,4 +1,23 @@
 // SPDX-License-Identifier: MIT
+
+[[section-db-configuration]]
+==== Database configuration 
+===== PostgreSQL
+First of all install a PostgreSQL database.
+
+Then define following environment entries before you start the server with active postgres profile:
+
+- POSTGRES_DB_URL
+- POSTGRES_DB_USERNAME
+- POSTGRES_DB_PASSWORD
+
+Examples:
+----
+POSTGRES_DB_URL=jdbc:postgresql://127.0.0.1:49152/sechub
+POSTGRES_DB_USERNAME=sechub-pg-admin
+POSTGRES_DB_PASSWORD=a-very-strong-password...
+----
+
 [[section-general-configuration]]
 ==== General configuration
 {sechub} can be configured  by keys on server startup.
