@@ -29,46 +29,65 @@ The following topics are covered:
 
 === Requirements
 
-* Java SDK (We are still compatible with Java 8 and will continue to do so. We aim to support all long term support versions (LTS) of the JDK: Java 8, 11 and 17 when released.)
+* Java SDK
+* Go
 * Git
 * cURL
 * jq
 
-==== Alpine Linux:
+[NOTE]
+--
+SecHub is compatible with Java 8 and will continue to do so. We aim to support all long term support versions (LTS) of the JDK: Java 8, 11 and 17 when released.
+
+SecHub can be build and runs with https://openjdk.java.net/groups/hotspot/[OpenJDK Hotspot] and https://www.eclipse.org/openj9/[Eclipse OpenJ9].
+--
+
+==== Alpine Linux
 
 ----
-apk add openjdk11 curl git bash jq
+apk add openjdk11 go curl git bash jq
 ----
 
-==== Debian:
+NOTE: Tested with Alpine Linux 3.12, 3.13 and 3.14.
+
+WARNING: Cross-compiling the SecHub client on Alpine Linux 3.11 does not work (Go version go1.13.13 linux/amd64). 
+
+==== Debian
 
 ----
-sudo apt install git openjdk-11-jdk curl jq
+sudo apt install openjdk-11-jdk-headless golang git curl jq
 ----
 
-==== Fedora and CentOS:
+NOTE: Tested with Debian 10 "Buster".
+
+==== Fedora and CentOS
 
 ----
-sudo dnf install git java-11-openjdk-devel curl jq
+sudo dnf install java-11-openjdk-devel golang git curl jq
 ----
 
-==== Ubuntu:
+NOTE: Tested with Fedora 34 and CentOS 8.
+
+==== Ubuntu
 
 ----
-sudo apt install git openjdk-11-jdk curl jq
+sudo apt install openjdk-11-jdk-headless golang git curl jq
 ----
+
+NOTE: Tested with Ubuntu 18.04 "Bionic" and 20.04 "Focal" LTS.
 
 === Instructions
 
 Let's start with:
 
 . Cloning the repository
++
 ----
 cd ~
 git clone https://github.com/Daimler/sechub.git
 cd sechub
 ----
-
++
 [TIP]
 --
 **Proxy**: +
@@ -85,56 +104,42 @@ systemProp.http.nonProxyHosts=*.nonproxyrepos.com|localhost
 ----
 --
 
-[start=2]
 . Build SecHub
++
 ----
 ./buildExecutables
 ----
 
-[start=3]
 . Start SecHub server in Integration Test mode
++
 ----
 ./gradlew startIntegrationTestServer
 ----
-
++
 WARNING: Do not use the Integration Test Server mode in production.
 
-[start=4]
 . Credentials
-
-Open the log file `./sechub-integrationtest/integrationtest-server.log` and search for:
-----
-##################### ATTENTION #####################################################
-# Created initial admin:'int-test_superadmin' with password:'{noop}int-test_superadmin-pwd'
-#                 email:'int-test_superadmin@sechub.example.org'
-# In production: CHANGE this initial API token, when your server has been started.
-# Everybody able to read this log file has access to these admin credentials!
-#####################################################################################
-----
-
-[NOTE]
---
-In case of an error message or failure, you can find the SecHub server log under: `./sechub-integrationtest/integrationtest-server.log`.
-
-The `{noop}` has to be excluded from the password string, therefore the password is: `int-test_superadmin-pwd`
---
-
-These are the initial credentials when starting SecHub server in integration-test mode:
-
++
+These are the initial credentials when starting SecHub server in `integration-test` mode:
++
 SecHub Superadmin:
-[quote]
-username: `int-test_superadmin`
-password: `int-test_superadmin-pwd`
++
+----
+username: int-test_superadmin
+password: int-test_superadmin-pwd
+----
++
+SecHub User Account:
++
+----
+username: int-test_onlyuser
+password: int-test_onlyuser-pwd
+----
 
-SecHub User account:
-[quote]
-username: `int-test_onlyuser`
-password: `int-test_onlyuser-pwd`
-
-[start=5]
 . Environment variables
 +
-Set search path and some environment variables to ease handling later on (SecHub client and `sechub-api.sh` script):
+Set search path and environment variables for the SecHub client and `sechub-api.sh` script:
++
 [source,bash]
 ----
 export SECHUB_SERVER=https://localhost:8443
@@ -144,18 +149,18 @@ export SECHUB_TRUSTALL=true
 export PATH="`pwd`/sechub-cli/build/go/platform/linux-amd64:`pwd`/sechub-developertools/scripts:$PATH"
 ----
 
-[start=6]
 . Test: List all users as administrator
-
++
 [NOTE]
 `sechub-api.sh` is a helper Bash script based on `curl` that eases the use of the https://daimler.github.io/sechub/latest/sechub-restapi.html[SecHub server REST API]. We use it here to get a list of the users.
-
++
 [source,bash]
 ----
 sechub-api.sh user_list
 ----
-
++
 Expected result:
++
 [source,json]
 ----
 [
@@ -164,10 +169,10 @@ Expected result:
 ]
 ----
 
-[start=7]
 . Create a project on SecHub server
-
-The output of the api calls are omitted here for better readability:
++
+The output of the API calls are omitted here for better readability:
++
 [source,bash]
 ----
 # Create "testproject"
@@ -180,12 +185,10 @@ sechub-api.sh project_assign_user testproject int-test_superadmin
 sechub-api.sh project_details testproject
 ----
 
-
-[start=8]
 . Scan with SecHub client
-
++
 Let's do a scan of our SecHub code:
-
++
 [source,bash]
 ----
 sechub -project testproject -reportformat html scan
@@ -208,17 +211,23 @@ WARNING: Configured to trust all - means unknown service certificate is accepted
 2021-06-22 13:26:30 (+02:00) SecHub report written to sechub_report_testproject_7045e25f-592b-46bf-9713-c31995d37e99.html
   GREEN - no severe security vulnerabilities identified
 ----
++
 _Congratulations! You have done your first SecHub code scan._ +
 You can open the SecHub report file in your browser.
-
++
 [NOTE]
 In order to scan, you need a `sechub.json` config file. In our case, it is already in the repository so we can use it right away. +
  +
-For real results, you have to define an 'execution profile' with a scanner (via a product adapter) attached. Assign it to your project and you get real results. See https://daimler.github.io/sechub/latest/sechub-operations.html#section-initial-profile-and-executors[SecHub documentation] for details.
+For real results, you have to define an 'execution profile' with a scanner (via a product adapter) attached. Assign it to your project and you get real results. Have a look at the https://daimler.github.io/sechub/latest/sechub-operations.html#section-initial-profile-and-executors[SecHub operations documentation] for details.
 
-[start=9]
 . Stop SecHub integration test server
 +
 ----
 ./gradlew stopIntegrationTestServer
 ----
+
+==== Troubleshooting
+
+===== Log files
+
+Open the log file `./sechub-integrationtest/integrationtest-server.log` to get more details about the problem.
